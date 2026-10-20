@@ -14,6 +14,7 @@ const { notFound, errorHandler } = require('./middleware/errorHandler');
  */
 function createApp({ service = createTaskService(), cfg = config } = {}) {
   const app = express();
+  app.disable('x-powered-by'); // jangan bocorkan teknologi server lewat header
 
   app.use(express.json({ limit: '10kb' }));
   app.use(requestLogger);
