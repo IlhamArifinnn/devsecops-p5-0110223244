@@ -1,0 +1,61 @@
+rules:
+  # Aturan 1: input dari request dipakai langsung sebagai path file (path traversal)
+  - id: taskflow-express-user-input-to-fs
+    mode: taint
+    languages: [javascript]
+    severity: ERROR
+    message: >-
+      Input dari request (req.params / req.query / req.body) mengalir ke operasi file
+      tanpa disanitasi. Gunakan path.resolve() lalu pastikan hasilnya masih berada di
+      dalam folder yang diizinkan (startsWith), atau gunakan allowlist nama file.
+    metadata:
+      category: security
+      cwe: "CWE-22: Improper Limitation of a Pathname to a Restricted Directory"
+      framework: express
+    pattern-sources:
+      - pattern: req.params
+      - pattern: req.query
+      - pattern: req.body
+    pattern-sinks:
+      - pattern: fs.readFile(...)
+      - pattern: fs.readFileSync(...)
+      - pattern: fs.createReadStream(...)
+      - pattern: fs.writeFile(...)
+      - pattern: fs.unlink(...)
+    pattern-sanitizers:
+      - pattern: path.basename(...)
+
+  # Aturan 2: aplikasi Express membuka header X-Powered-By (membocorkan teknologi server)
+  - id: taskflow-express-x-powered-by-enabled
+    languages: [javascript]
+    severity: WARNING
+    message: >-
+      Aplikasi Express dibuat tanpa app.disable('x-powered-by') sehingga header
+      X-Powered-By: Express ikut terkirim. Matikan header ini atau gunakan helmet.
+    metadata:
+      category: security
+      cwe: "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor"
+      framework: express
+    patterns:
+      - pattern: $APP = express();
+      - pattern-not-inside: |
+          $APP = express();
+          ...
+          $APP.disable('x-powered-by');
+      - pattern-not-inside: |
+          $APP = express();
+          ...
+          $APP.use(helmet(...));
+
+  # Aturan 3: Math.random() tidak aman untuk ID/token
+  - id: taskflow-math-random-for-id
+    languages: [javascript]
+    severity: WARNING
+    message: >-
+      Math.random() bukan generator acak yang aman secara kriptografi. Untuk ID atau
+      token gunakan crypto.randomUUID() atau crypto.randomBytes().
+    metadata:
+      category: security
+      cwe: "CWE-338: Use of Cryptographically Weak Pseudo-Random Number Generator"
+      framework: express
+    pattern: Math.random()

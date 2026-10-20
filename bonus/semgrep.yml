@@ -1,0 +1,48 @@
+# BONUS (Tugas 3): custom rule Semgrep untuk Express.
+# Cara pakai: pindahkan file ini ke .github/workflows/semgrep.yml lalu commit & push.
+name: Semgrep Custom Rules
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  semgrep:
+    name: SAST (Semgrep custom rules)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write # upload SARIF ke tab Security
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install Semgrep
+        run: pip install semgrep
+
+      # Hasil tampil di log (untuk screenshot) sekaligus ditulis ke file SARIF.
+      - name: Run Semgrep with custom rules
+        run: >
+          semgrep scan
+          --config .semgrep/express-rules.yml
+          --metrics=off
+          --sarif-output=semgrep.sarif
+          src
+
+      - name: Upload SARIF to GitHub Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep-custom

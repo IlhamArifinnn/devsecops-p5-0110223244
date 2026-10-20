@@ -1,0 +1,4 @@
+TaskFlow API - Laporan Contoh
+==============================
+Ini adalah file contoh yang dapat diunduh melalui endpoint:
+GET /api/export/sample-report.txt
